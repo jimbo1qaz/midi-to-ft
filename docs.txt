@@ -1,0 +1,9 @@
+DS volume curve: ???
+DS velocity curve: ???
+
+MIDI volume curve: (v/127)^4
+
+SNES volume curve: ???
+SNES quantization curve: f(ASM), f = ????
+
+Fuck it, q*F, snesvol = [30, 255] linearly scaled
