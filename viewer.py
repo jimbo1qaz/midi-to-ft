@@ -5,11 +5,19 @@
 # Retain maximization, minimization after reload
 
 import sys
-
+import traceback
 from tkinter import *
 from tkinter import ttk
-
+import gc
 from midi_convert import *
+
+
+# FONT = '"Small Fonts" 8'
+FONT = '"Segoe UI" 9'
+
+ROOT = Tk()
+def get_root():
+    return ROOT
 
 
 class Viewer(object):
@@ -156,7 +164,7 @@ class Viewer(object):
 
     @staticmethod
     def draw_text(canvas, x, y, text, **kwargs):
-        canvas.create_text(x, y, anchor='w', font='fakefont 10', text=text, **kwargs)
+        canvas.create_text(x, y, anchor='w', font=FONT, text=text, **kwargs)
 
     # UTILITY
     def create_canvas(self, width, height):
@@ -173,12 +181,29 @@ class Viewer(object):
         return letter + str(octave)
 
     # etc.
+    def regenerate(self):
+        scrolls = [
+            #self.hbar.get(), self.vbar.get()
+            [scroll.xview() for scroll in self.xscrolls],
+            [scroll.yview() for scroll in self.yscrolls]
+        ]
+        self.frame.grid_remove()
+        self.frame.destroy()
+
+        self.root.after(0, view, self.new_tracknum, scrolls)
+        traceback.print_stack()
+        gc.collect()
+        print(gc.get_referrers(self))
+        # view(self.new_tracknum, scrolls)
+
     def _on_list_selected(self, event):
         # Add 1 to the track, as the thing only shows tracks [1:]
-        self.new_tracknum = self.track_box.current() + 1
-        self.root.destroy()
+        self.new_tracknum = self.track_box.current()
+        self.regenerate()
 
-    def __init__(self, file_name, track_list, curr_num, track, tickrate, qnote_width, pitch_range):
+    def __init__(self, file_name, track_list, curr_num, track, tickrate, qnote_width, pitch_range, cfg):
+        self.cfg = cfg
+        # self.useless = {x: x for x in range(1000000)}
         # Initialize the arrays
         self.xscrolls = []
         self.yscrolls = []
@@ -205,15 +230,17 @@ class Viewer(object):
 
         self.pitch_range = pitch_range
 
+        self.vol_expr = cfg['vol_expr']
+
 
         # self.:
         # root, frame, canvas, labels, time_canvas, pitch_canvas, vibrato_canvas
 
         # Prepare Tkinter.
-        root = Tk()
+        root = get_root()
         self.root = root
-        root.title('Port-a-Potty - ' + file_name)
-        root.geometry("640x480")
+        root.title('Port-a-Potty - ' + file_name + str(curr_num))
+        # root.geometry("640x480")
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
 
@@ -245,13 +272,13 @@ class Viewer(object):
         self.xscrolls.append(time_canvas)
 
         # Pitch canvas
-        pitch_canvas = self.create_canvas(width, 128)
+        pitch_canvas = self.create_canvas(width, 0.128)
         self.pitch_canvas = pitch_canvas
         pitch_canvas.grid(column=1, row=3, sticky=(N, W, E, S), padx=1, pady=1)
         self.xscrolls.append(pitch_canvas)
 
         # Vibrato canvas
-        vibrato_canvas = self.create_canvas(width, 32)
+        vibrato_canvas = self.create_canvas(width, 0.32)
         self.vibrato_canvas = vibrato_canvas
         vibrato_canvas.grid(column=1, row=4, sticky=(N, W, E, S), padx=1, pady=1)
         self.xscrolls.append(vibrato_canvas)
@@ -261,13 +288,25 @@ class Viewer(object):
         self.setup_background()
         self.setup_measures()
         self.draw()
+        if self.cfg['scrolls']:
+            print(self.cfg['scrolls'])
+            wtf = self.cfg['scrolls']
+            for tup, scroll in zip(wtf[0], self.xscrolls):
+                scroll.xview_moveto(tup[0])
+            for tup, scroll in zip(wtf[1], self.yscrolls):
+                scroll.yview_moveto(tup[0])
+
+                # scrollbar.set(*tup)
+            # for tup, scrollbar in zip(self.cfg['scrolls'], [self.hbar, self.vbar]):
+            #     print(scrollbar)
+            #     scrollbar.set(*tup)
 
     def setup_list(self, track_list):
         # Initialized with track list, excluding dummy track.
         self.track_box = track_box = ttk.Combobox(self.frame, state='readonly', values=track_list[1:])
         track_box.grid(column=0, row=0, sticky=(N, S, E, W), columnspan=3)
 
-        track_box.current(self.tracknum - 1)
+        track_box.current(self.tracknum)
 
         # Bind events to select next track.
         track_box.bind('<<ComboboxSelected>>', self._on_list_selected)
@@ -306,6 +345,7 @@ class Viewer(object):
         root.bind('<Left>', self._on_arrow_left)
         root.bind('<Right>', self._on_arrow_right)
 
+
     def setup_background(self):
         canvas = self.canvas
         pitch_canvas = self.pitch_canvas
@@ -324,9 +364,9 @@ class Viewer(object):
 
         # Draw note labels
         for y in range(128):
-            self.labels.create_text(29, self.calc_y(y) + 8, anchor='e', font='fakefont 10',
+            self.labels.create_text(29, self.calc_y(y) + 8, anchor='e', font=FONT,
                                     text=str(y))
-            self.labels.create_text(62, self.calc_y(y) + 8, anchor='e', font='fakefont 10',
+            self.labels.create_text(62, self.calc_y(y) + 8, anchor='e', font=FONT,
                                     text=self.note2sci(y))
 
         # Draw the pitch canvas lines
@@ -389,7 +429,10 @@ class Viewer(object):
         for pitch, pitch_dict in enumerate(self.note_out):
             for time, note_tuple in pitch_dict.items():
                 note_pitch = note_tuple[0]
-                volume = note_tuple[1]
+                # volume = round((note_tuple[1] / 79) ** 2 * 99)
+                # volume = note_tuple[1] * 2
+                volume = self.vol_expr(note_tuple[1])
+
                 end_time = note_tuple[2]
                 if pitch != note_pitch:
                     print('ERROR INCORRECT PITCH IN NOTE!')
@@ -409,13 +452,14 @@ class Viewer(object):
 
                 volume = abs(volume)
 
-                amount_filled = volume * 16 / 128   # Convert 128-volume to 16-pixels.
+                amount_filled = volume * 16 / 256   # Convert 128-volume to 16-pixels.
+                # amount_filled = 16
 
                 canvas.create_rectangle(note_x, note_y,
                                         note_end, note_y + 16, fill=self.COLOR_GRAY)
                 canvas.create_rectangle(note_x, note_y + 16 - amount_filled,
                                         note_end, note_y + 16, fill=fill)
-                self.draw_text(canvas, note_x + 2, note_y + 8, str(abs(volume)))
+                self.draw_text(canvas, note_x + 2, note_y - 4, str(abs(volume)))
                 # DEBUGGING
                 # self.draw_text(canvas, note_x + 32, note_y + 8, str(time))
                 # self.draw_text(canvas, note_x + 64, note_y + 8, str(end_time))
@@ -438,32 +482,40 @@ class Viewer(object):
             prev_y = curr_y
 
 
-# main
-file_name = sys.argv[1]
-with open(file_name, 'rb') as file:
-# with open('test.mid', 'rb') as file:
-    score = MIDI.midi2score(file.read())
 
-tick_rate = score[0]
-tracks = score[1:]
+def main(vol_expr=lambda v:v):
+    # main
+    file_name = sys.argv[1]
+    with open(file_name, 'rb') as file:
+    # with open('test.mid', 'rb') as file:
+        score = MIDI.midi2score(file.read())
 
-curr_num = 1
-track_names = ['']
-for index, track in enumerate(tracks[1:]):
-    # print(index, track)
-    name = get_name(track)
-    if name is None:
-        track_names.append('Unnamed Track ' + str(index + 1))
-    else:
-        track_names.append(name)
+    tick_rate = score[0]
+    tracks = score[1:]
 
+    curr_num = 0
+    track_names = ['']
+    for index, track in enumerate(tracks):
+        # print(index, track)
+        name = get_name(track)
+        if name is None:
+            track_names.append('Unnamed Track ' + str(index + 1))
+        else:
+            track_names.append(name)
 
-while curr_num != -1:
-    track = tracks[curr_num]
-    # print('Tick rate', tick_rate)
-    viewer = Viewer(file_name, track_names, curr_num, track, tickrate=tick_rate, qnote_width=48, pitch_range=1200)
-    # All pitch bends are calculated in cents
+    global view
+    def view(curr_num, scrolls=None):
+        track = tracks[curr_num]
+        # print('Tick rate', tick_rate)
+        return Viewer(file_name, track_names, curr_num, track, tickrate=tick_rate, qnote_width=48, pitch_range=1200,
+            cfg={'vol_expr': vol_expr, 'scrolls': scrolls})
 
-    viewer.root.mainloop()
-    curr_num = viewer.new_tracknum
-    del viewer
+    # while curr_num != -1:
+    if 1:
+        # viewer = view(curr_num)
+        # All pitch bends are calculated in cents
+
+        # viewer.root.mainloop()
+        view(curr_num).root.mainloop()
+        # curr_num = viewer.new_tracknum
+        # del viewer
