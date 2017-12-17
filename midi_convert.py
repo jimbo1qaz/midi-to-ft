@@ -148,12 +148,12 @@ def convert_track(track):
     return note_out, pitch_out, vibrato_out, maxtick
 
 
-def get_name(track):
-    name = None
-    for event in track:
-        if event[0] == 'track_name':
-            # event, time, text
-            name = event[2]
-            return name
+# def get_name(track):
+#     name = None
+#     for event in track:
+#         if event[0] == 'track_name':
+#             # event, time, text
+#             name = event[2]
+#             return name
 
-    return None
+#     return None

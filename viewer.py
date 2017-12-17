@@ -11,6 +11,26 @@ from tkinter import ttk
 import gc
 from midi_convert import *
 
+import midiutil
+import util
+
+
+def note2sci(note):
+    note2letter = ['C', 'C#', 'D', 'D#', 'E', 'F',
+                   'F#', 'G', 'G#', 'A', 'A#', 'B']
+    octave = note // 12 - 1
+    letter = note2letter[note % 12]
+    return letter + str(octave)
+
+
+
+
+
+
+
+
+
+
 
 # FONT = '"Small Fonts" 8'
 FONT = '"Segoe UI" 9'
@@ -169,16 +189,9 @@ class Viewer(object):
     # UTILITY
     def create_canvas(self, width, height):
         canvas = Canvas(self.frame, bg='#FFF', scrollregion=(0, 0, width, height),
-                        width=width, height=height, bd=0, highlightthickness=0, relief='ridge')
+                        width=width, height=height, bd=0, highlightthickness=0, relief='ridge',
+                        takefocus=True)
         return canvas
-
-    @staticmethod
-    def note2sci(note):
-        note2letter = ['C', 'C#', 'D', 'D#', 'E', 'F',
-                       'F#', 'G', 'G#', 'A', 'A#', 'B']
-        octave = note // 12 - 1
-        letter = note2letter[note % 12]
-        return letter + str(octave)
 
     # etc.
     def regenerate(self):
@@ -191,10 +204,10 @@ class Viewer(object):
         self.frame.destroy()
 
         self.root.after(0, view, self.new_tracknum, scrolls)
-        traceback.print_stack()
-        gc.collect()
-        print(gc.get_referrers(self))
-        # view(self.new_tracknum, scrolls)
+        # traceback.print_stack()
+        # gc.collect()
+        # print(gc.get_referrers(self))
+        # # view(self.new_tracknum, scrolls)
 
     def _on_list_selected(self, event):
         # Add 1 to the track, as the thing only shows tracks [1:]
@@ -303,7 +316,7 @@ class Viewer(object):
 
     def setup_list(self, track_list):
         # Initialized with track list, excluding dummy track.
-        self.track_box = track_box = ttk.Combobox(self.frame, state='readonly', values=track_list[1:])
+        self.track_box = track_box = ttk.Combobox(self.frame, height=1000, state='readonly', values=track_list)
         track_box.grid(column=0, row=0, sticky=(N, S, E, W), columnspan=3)
 
         track_box.current(self.tracknum)
@@ -363,12 +376,14 @@ class Viewer(object):
                 self.draw_hline(y + 15)
 
         # Draw note labels
+        # (optional) percussion names?
         for y in range(128):
             self.labels.create_text(29, self.calc_y(y) + 8, anchor='e', font=FONT,
                                     text=str(y))
             self.labels.create_text(62, self.calc_y(y) + 8, anchor='e', font=FONT,
-                                    text=self.note2sci(y))
+                                    text=note2sci(y))
 
+        # TODO one object per canvas
         # Draw the pitch canvas lines
         # Zero marking
         self.draw_single_hline(pitch_canvas, self.pitch_calc_y(0), width=3)
@@ -388,6 +403,7 @@ class Viewer(object):
         # draw dividing line
         self.draw_single_vline(self.labels, 31)
 
+    # TODO: config object
     def setup_measures(self):
         # The multiplier converts ticks to pixels.
         tickrate = self.tickrate
@@ -482,6 +498,33 @@ class Viewer(object):
             prev_y = curr_y
 
 
+def track_names_uh(tracks):
+    track_names = []
+    track_instrs = []
+
+    # Loop through all specified tracks.
+
+    for i, track in enumerate(tracks):
+        track_names.append(midiutil.get_name(track)
+                           .encode('latin-1')
+                           .decode('ascii', 'backslashreplace'))
+
+
+        is_perc = (midiutil.get_channel(track) == 9)
+        used_insts = midiutil.get_instrs(track)
+        inst_list = sorted([util.instr_fmt(x, is_perc) for x in used_insts])
+
+        instr_text = ', '.join(inst_list)
+
+        track_instrs.append(instr_text)
+
+    name_max = max(len(name) for name in track_names)
+
+    for i in range(len(tracks)):
+        yield(str(i).ljust(4) + '| ' + track_names[i].ljust(name_max + 4) + '| ' + track_instrs[i])
+
+
+
 
 def main(vol_expr=lambda v:v):
     # main
@@ -493,15 +536,7 @@ def main(vol_expr=lambda v:v):
     tick_rate = score[0]
     tracks = score[1:]
 
-    curr_num = 0
-    track_names = ['']
-    for index, track in enumerate(tracks):
-        # print(index, track)
-        name = get_name(track)
-        if name is None:
-            track_names.append('Unnamed Track ' + str(index + 1))
-        else:
-            track_names.append(name)
+    track_names = list(track_names_uh(tracks))
 
     global view
     def view(curr_num, scrolls=None):
@@ -510,12 +545,5 @@ def main(vol_expr=lambda v:v):
         return Viewer(file_name, track_names, curr_num, track, tickrate=tick_rate, qnote_width=48, pitch_range=1200,
             cfg={'vol_expr': vol_expr, 'scrolls': scrolls})
 
-    # while curr_num != -1:
-    if 1:
-        # viewer = view(curr_num)
-        # All pitch bends are calculated in cents
-
-        # viewer.root.mainloop()
-        view(curr_num).root.mainloop()
-        # curr_num = viewer.new_tracknum
-        # del viewer
+    curr_num = 0
+    view(curr_num).root.mainloop()
