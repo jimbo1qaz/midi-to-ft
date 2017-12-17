@@ -2,59 +2,14 @@
 This file contains miscellaneous utilities. Anything working on a track is excluded.
 """
 
-import bisect as _bisect
 from fractions import Fraction as _Fraction
-
-from midi import MIDI as _MIDI
-from typing import Sequence as _Sequence, Any as _Any
+from tkinter import Widget, ttk
 
 _TrackType = None
 
-# from types import ModuleType
-# import itertools
 
-
-# These functions should remain static if MidiBackend is ever made a class.
-
-# def printerr(*objects, sep=' ', end='\n', flush=False):
-#     print(*objects, sep=sep, end=end, flush=flush)
-#     # print(*objects, sep=sep, end=end, flush=flush, file=sys.stderr)
-
-printerr = print
-
-
-class _IterGetter(_Sequence[_Any]):
-    """
-    bisect does not provide "key" because repeatedly calling "key" is inefficient. like I care?
-
-    I'm calling this function once per list, tops. O(N) generation is SLOWER than O(log N) bisection!
-    """
-
-    def __init__(self, ls, keyf):
-        self.ls = ls
-        self.keyf = keyf
-
-    def __len__(self):
-        return len(self.ls)
-
-    def __getitem__(self, index):
-        return self.keyf(self.ls[index])
-
-
-def insert_sorted(ls: _TrackType, event):
-    """ Inserts event at beginning of tick. """
-
-    keyf = lambda ev: ev[1]
-
-    keys = _IterGetter(ls, keyf)
-    new_key = keyf(event)
-
-    # TODO: lol why bother bisecting when we do O(n) insert?
-    idx = _bisect.bisect_left(keys, new_key)
-
-    ls.insert(idx, event)
-
-
+class MidiException(Exception):
+    pass
 
 
 def parse_frac(infrac):
@@ -68,16 +23,7 @@ def parse_frac(infrac):
     return _Fraction(infrac)
 
 
-# def ticks2str(ticks, tickrate):
-#     time_frac = _Fraction(ticks) / tickrate
-#
-#     measures = time_frac // 4
-#     beats = int(time_frac) % 4
-#     remainder = time_frac - (4 * measures) - beats
-#     return '{!s:<8}{!s:<8}{!s:<8}'.format(measures, beats, remainder)
-
-
-def time2ticks(time:str, tickrate):
+def time2ticks(time: str, tickrate):
     # Converts a string representation of time to ticks.
 
     # measures : beats : beat frac T ticks
@@ -126,62 +72,21 @@ def skip_spaces(in_str, index, character=None):
 
 
 def keep_leading(in_str, index, character=None):
+    """
+    >>> s = 'a b c'
+    >>> skip_spaces(s, 1)   #[1:]
+    'b c'
+    >>> keep_leading(s, 1)  #[:1]
+    'a'
+    """
     if index < 0: raise ValueError('cannot get negative substring')
     if index == 0: return ''
 
     num_items = len(in_str.split(character))
-    if index >= num_items: return in_str
+    if index >= num_items:
+        return in_str
+    return in_str.rsplit(sep=character, maxsplit=num_items-index)[0]
 
-    # wtf pep8
-    return in_str.rsplit(sep=character, maxsplit = num_items - index)[0]
-
-
-'''
->>> s = 'a b c'
->>> skip_spaces(s, 1)   [1:]
-'b c'
->>> keep_leading(s, 1)  [:1]
-'a'
-'''
-
-
-def channel2num(channel_name):
-    return int(float(channel_name) + 0.25)
-
-def instr2num(inst_name):
-    return dict_find(inst_name, _MIDI.Number2patch)
-
-
-def num2instr(patch_num):
-    return dict_loose(patch_num, _MIDI.Number2patch)
-
-
-def instr_fmt(instr_num, is_perc):
-    if is_perc:
-        name = 'Percussion'
-    else:
-        name = num2instr(instr_num)
-
-    if instr_num in range(0, 128):
-        return '{} {}'.format(instr_num, name)
-    else:
-        return str(instr_num)
-
-
-
-def perc2pitch(perc_name):
-    return dict_find(perc_name, _MIDI.Notenum2percussion)
-
-
-def pitch2perc(pitch):
-    return dict_loose(pitch, _MIDI.Notenum2percussion)
-
-
-def pitch_fmt(pitch):
-    if pitch in range(0, 128):
-        return '{} {}'.format(pitch, pitch2perc(pitch))
-    else:
-        return str(pitch)
 
 
 
@@ -196,15 +101,15 @@ def dict_find(value, dic):
     except (ValueError, TypeError):
         pass
 
-
     # We know it's an instrument name.
+
     vals = map(lambda val: val.lower(), dic.values())
 
     # Look for perfect matches.
+
     inverse = {val.lower(): key for key, val in dic.items()}
     if value in inverse:
         return inverse[value]
-
 
     # We know there are no perfect matches.
     # If there are multiple matches, then error out.
@@ -219,7 +124,7 @@ def dict_find(value, dic):
             print(match)
         print('Exact matches will NOT trigger this error, try extending?')
 
-        raise Exception
+        raise MidiException
 
     return inverse[vmatch[0]]
 
@@ -235,7 +140,7 @@ def dict_loose(key, dic):
 
 def validate_127(name, val):
     if val not in range(0, 128):
-        raise Exception('Invalid %s %s not in [0, 127]' % (name, val))
+        raise MidiException('Invalid %s %s not in [0, 127]' % (name, val))
 
 
 def clip_127(in_val):
@@ -250,27 +155,27 @@ def volume_calc(a, b):
     new_volume = round(a * b)
 
     if new_volume > 127:
-        raise Exception('Volume/velocity overflow')
+        raise MidiException('Volume/velocity overflow')
         # printerr('Error: Volume/velocity overflow!')
         # new_volume = 127
 
     if new_volume < 0:
-        raise Exception('Volume/velocity underflow')
+        raise MidiException('Volume/velocity underflow')
         # printerr('Error: Volume/velocity underflow')
         # new_volume = 0
 
     return new_volume
 
 
-def grouper(iterable, n):
-    """Collect data into fixed-length chunks or blocks"""
-    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
-    length = len(iterable)
-    if length % n != 0:
-        raise Exception('Grouper error ({} not a multiple of {})!'.format(
-            length, n))
-    args = [iter(iterable)] * n
-    return zip(*args)
+# def grouper(iterable, n):
+#     """Collect data into fixed-length chunks or blocks"""
+#     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+#     length = len(iterable)
+#     if length % n != 0:
+#         raise MidiException('Grouper error ({} not a multiple of {})!'.format(
+#             length, n))
+#     args = [iter(iterable)] * n
+#     return zip(*args)
 
 
 # Too lazy to list-comprehension.
@@ -318,3 +223,28 @@ assert importf
 def ats(arr, indexes):
     return [arr[i] for i in indexes]
 
+
+class AttrDict(dict):
+    def __init__(self, seq=None, **kwargs):
+        if seq is None:
+            seq = {}
+        super(self.__class__, self).__init__(seq, **kwargs)
+        self.__dict__ = self
+
+
+# **** GUI ****
+
+FONT = '"DejaVu Sans Mono" 9'
+zeros = (0, 0, 0, 0)
+nsew = 'nsew'
+
+
+def grid(widget: Widget, x=0, y=0, **kwargs):
+    widget.grid(column=x, row=y, **kwargs)
+
+
+def y_expand(frame: ttk.Frame, rows, **kw_rows):
+    for row, weight in enumerate(rows):
+        frame.rowconfigure(row, weight=weight)
+    for row, weight in kw_rows.items():
+        frame.rowconfigure(row, weight=weight)

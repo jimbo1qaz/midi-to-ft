@@ -1,6 +1,5 @@
 import inspect
 
-from midi import MIDI
 
 # event, ... , channel, params...
 

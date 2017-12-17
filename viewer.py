@@ -9,6 +9,7 @@ import traceback
 from tkinter import *
 from tkinter import ttk
 import gc
+from midi import MIDI
 from midi_convert import *
 
 import midiutil
@@ -41,12 +42,6 @@ def get_root():
 
 
 class Viewer(object):
-    # def yview(self, *args):
-    # for scroll in self.scrolls:
-    # scroll.yview(*args)
-
-    # SCROLLING
-
     COLOR_GRAY = '#CCC'
     COLOR_DARK_GRAY = '#AAA'
     COLOR_PIANO_BLACK = '#F8F0F0'
@@ -512,7 +507,7 @@ def track_names_uh(tracks):
 
         is_perc = (midiutil.get_channel(track) == 9)
         used_insts = midiutil.get_instrs(track)
-        inst_list = sorted([util.instr_fmt(x, is_perc) for x in used_insts])
+        inst_list = sorted([midiutil.instr_fmt(x, is_perc) for x in used_insts])
 
         instr_text = ', '.join(inst_list)
 
@@ -520,8 +515,10 @@ def track_names_uh(tracks):
 
     name_max = max(len(name) for name in track_names)
 
+    ret = []
     for i in range(len(tracks)):
-        yield(str(i).ljust(4) + '| ' + track_names[i].ljust(name_max + 4) + '| ' + track_instrs[i])
+        ret.append(str(i).ljust(4) + '| ' + track_names[i].ljust(name_max + 4) + '| ' + track_instrs[i])
+    return ret
 
 
 
@@ -530,7 +527,6 @@ def main(vol_expr=lambda v:v):
     # main
     file_name = sys.argv[1]
     with open(file_name, 'rb') as file:
-    # with open('test.mid', 'rb') as file:
         score = MIDI.midi2score(file.read())
 
     tick_rate = score[0]

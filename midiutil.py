@@ -1,4 +1,5 @@
 from midi import MIDI as _MIDI
+from util import dict_find, dict_loose
 
 
 def event_is_vol(event):
@@ -53,21 +54,36 @@ def sort_track(track):
     track.sort(key=lambda event: event[1])
 
 
-# def insert_keyed(in_list, val, key):
-#     # Locate the leftmost value >= x
-#     for idx, element in enumerate(in_list):
-#         if key(element) >= key(val):
-#             in_list.insert(idx, val)
-#             return
-#
-#     in_list.append(val)
-#
-#
-# def insert_keyed_after(in_list, val, key):
-#     # Locate the rightmost value <= x
-#     for idx, element in reversed(enumerate(in_list)):
-#         if key(element) <= key(val):
-#             in_list.insert(idx + 1, val)
-#             return
-#
-#     in_list.insert(0, val)
+def instr2num(inst_name):
+    return dict_find(inst_name, _MIDI.Number2patch)
+
+
+def num2instr(patch_num):
+    return dict_loose(patch_num, _MIDI.Number2patch)
+
+
+def instr_fmt(instr_num, is_perc):
+    if is_perc:
+        name = 'Percussion'
+    else:
+        name = num2instr(instr_num)
+
+    if instr_num in range(0, 128):
+        return '{} {}'.format(instr_num, name)
+    else:
+        return str(instr_num)
+
+
+def perc2pitch(perc_name):
+    return dict_find(perc_name, _MIDI.Notenum2percussion)
+
+
+def pitch2perc(pitch):
+    return dict_loose(pitch, _MIDI.Notenum2percussion)
+
+
+def pitch_fmt(pitch):
+    if pitch in range(0, 128):
+        return '{} {}'.format(pitch, pitch2perc(pitch))
+    else:
+        return str(pitch)
