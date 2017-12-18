@@ -1,13 +1,12 @@
-import sys
 from tkinter import *
-from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk
 
 from midi import MIDI
 import midiutil
 
 from piano import PianoPanel
-from util import zeros, nsew, grid, weigh, y_weigh
+from script2ft import ScriptPanel
+from util import weigh
 
 ROOT = Tk()
 
@@ -63,18 +62,16 @@ class App:
         weigh(root)
 
         # root.
-        self.layout = layout = ttk.Frame(root, padding=zeros)
-        grid(layout, sticky=nsew)
-        y_weigh(layout, [1, 0])
+        self.layout = layout = ttk.PanedWindow(root)
+        layout.pack(fill=BOTH, expand=1)
 
         # root.layout.
         piano_frame = ttk.Frame(layout, width=640, height=480)
-        grid(piano_frame, 0, 0, sticky=nsew)
+        layout.add(piano_frame, weight=1)
         self.piano = PianoPanel(piano_frame, self, INITIAL_TNUM, cfg)   # fixme
-        # wtf(piano_frame)
 
         script_frame = ttk.Frame(layout)
-        grid(script_frame, 0, 1, sticky=nsew)
+        layout.add(script_frame)
         self.script = ScriptPanel(script_frame, cfg)
 
 
@@ -103,16 +100,6 @@ def track_names_uh(tracks):
     for i in range(len(tracks)):
         ret.append(str(i).ljust(4) + '| ' + track_names[i].ljust(name_max + 4) + '| ' + track_instrs[i])
     return ret
-
-
-class ScriptPanel:
-    def __init__(self, frame, cfg):
-        assert cfg or True
-        self.frame = frame
-        weigh(frame)
-
-        fill = ScrolledText(frame, height=16)
-        grid(fill, sticky=nsew)
 
 
 path = r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid'

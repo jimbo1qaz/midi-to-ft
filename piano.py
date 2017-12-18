@@ -29,12 +29,12 @@ class Scrollable:
     def _on_mousewheel(self, event):
         # up down
         for scroll in self.yscrolls:
-            scroll.yview_scroll(int(-1 * (event.delta / 120)), 'units')
+            scroll.yview_scroll(int(-1 * (event.delta / 60)), 'units')
 
     def _on_shift_mousewheel(self, event):
         # left right
         for scroll in self.xscrolls:
-            scroll.xview_scroll(int(-1 * (event.delta / 120)), 'units')
+            scroll.xview_scroll(int(-1 * (event.delta / 60)), 'units')
 
     # PAGEUP PAGEDOWN
     def _on_pageup(self, event):
@@ -106,7 +106,7 @@ class Scrollable:
     @staticmethod
     def _onclick(event: Event):
         print(event)
-        event.widget.focus()
+        event.widget.focus_set()
 
     # *************************************
     # **** Scrollable drawing commands ****
@@ -265,6 +265,8 @@ class PianoPanel(Scrollable):
         width = self.calc_x(maxtick)  # Depends on qnote_width
         self.width = width
 
+        # we could add method to recreate all canvases.
+
         for canvas in self.canvases:    # type: Canvas
             canvas.delete(ALL)
 
@@ -293,6 +295,7 @@ class PianoPanel(Scrollable):
 
     def setup_toolbar(self, track_list, tnum):
         toolbar = ttk.Frame(self.frame)
+        # toolbar.configure(padding=1)
         grid(toolbar, 0, 0, sticky=(N, S, E, W), columnspan=3)
 
         self.track_box = track_box = ttk.Combobox(
@@ -310,6 +313,7 @@ class PianoPanel(Scrollable):
     def _on_list_selected(self, event):
         self.tracknum = self.track_box.current()
         self.load_track(self.tracknum)
+        self.frame.focus_set()
 
     def setup_scrolls(self):
         root = self.frame   # fixme
