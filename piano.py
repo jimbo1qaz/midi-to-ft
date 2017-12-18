@@ -1,9 +1,10 @@
 from tkinter import *
 from tkinter import ttk
 
-from midiutil import note2sci
-from util import zeros, nsew, grid, weigh, y_weigh, FONT, I
 from midi_convert import convert_track
+from midiutil import note2sci
+from util import nsew, grid, FONT, I, recursive_bind
+
 
 # class DebugScrollbar(ttk.Scrollbar):
 #     def set(self, *args):
@@ -100,7 +101,16 @@ class Scrollable:
         for scroll in self.xscrolls:
             scroll.xview_scroll(1, 'units')
 
+    #
+
+    @staticmethod
+    def _onclick(event: Event):
+        print(event)
+        event.widget.focus()
+
+    # *************************************
     # **** Scrollable drawing commands ****
+    # *************************************
 
     def draw_vline(self, x, **kwargs):
         for canvas in self.xscrolls:
@@ -314,25 +324,27 @@ class PianoPanel(Scrollable):
         self.canvas.configure(xscrollcommand=hbar.set)
 
         # Not scrollbars, but the best place to put them.
-        root.bind('<Shift-MouseWheel>', self._on_shift_mousewheel)
-        root.bind('<MouseWheel>', self._on_mousewheel)
-        root.bind('<Button-4>', self._on_mousewheel)
-        root.bind('<Button-5>', self._on_mousewheel)
+        recursive_bind(root, '<Shift-MouseWheel>', self._on_shift_mousewheel)
+        recursive_bind(root, '<MouseWheel>', self._on_mousewheel)
+        recursive_bind(root, '<Button-4>', self._on_mousewheel)
+        recursive_bind(root, '<Button-5>', self._on_mousewheel)
 
-        root.bind('<Prior>', self._on_pageup)
-        root.bind('<Next>', self._on_pagedown)
-        root.bind('<Shift-Prior>', self._on_shift_pageup)
-        root.bind('<Shift-Next>', self._on_shift_pagedown)
+        recursive_bind(root, '<Prior>', self._on_pageup)
+        recursive_bind(root, '<Next>', self._on_pagedown)
+        recursive_bind(root, '<Shift-Prior>', self._on_shift_pageup)
+        recursive_bind(root, '<Shift-Next>', self._on_shift_pagedown)
 
-        root.bind('<Home>', self._on_home)
-        root.bind('<End>', self._on_end)
-        root.bind('<Shift-Home>', self._on_shift_home)
-        root.bind('<Shift-End>', self._on_shift_end)
+        recursive_bind(root, '<Home>', self._on_home)
+        recursive_bind(root, '<End>', self._on_end)
+        recursive_bind(root, '<Shift-Home>', self._on_shift_home)
+        recursive_bind(root, '<Shift-End>', self._on_shift_end)
 
-        root.bind('<Up>', self._on_arrow_up)
-        root.bind('<Down>', self._on_arrow_down)
-        root.bind('<Left>', self._on_arrow_left)
-        root.bind('<Right>', self._on_arrow_right)
+        recursive_bind(root, '<Up>', self._on_arrow_up)
+        recursive_bind(root, '<Down>', self._on_arrow_down)
+        recursive_bind(root, '<Left>', self._on_arrow_left)
+        recursive_bind(root, '<Right>', self._on_arrow_right)
+
+        recursive_bind(root, '<Button-1>', self._onclick)
 
 
     def setup_background(self):

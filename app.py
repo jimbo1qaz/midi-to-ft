@@ -28,6 +28,21 @@ layout
 INITIAL_TNUM = 0
 
 
+
+def wtf(frame):
+    def key(event):
+        print("pressed", repr(event.char))
+
+    def callback(event):
+        frame = event.widget
+        frame.focus_set()
+        print("clicked at", event.x, event.y)
+
+    frame.bind("<Key>", key)
+    frame.bind("<Button-1>", callback)
+
+
+
 class App:
     def __init__(self, filename, cfg: dict):
         self.cfg = cfg
@@ -44,6 +59,7 @@ class App:
 
         self.root = root = ROOT
         root.title('midi2fami')
+        root.geometry("640x800")
         weigh(root)
 
         # root.
@@ -52,9 +68,10 @@ class App:
         y_weigh(layout, [1, 0])
 
         # root.layout.
-        piano_frame = ttk.Frame(layout)
+        piano_frame = ttk.Frame(layout, width=640, height=480)
         grid(piano_frame, 0, 0, sticky=nsew)
         self.piano = PianoPanel(piano_frame, self, INITIAL_TNUM, cfg)   # fixme
+        # wtf(piano_frame)
 
         script_frame = ttk.Frame(layout)
         grid(script_frame, 0, 1, sticky=nsew)
@@ -98,8 +115,9 @@ class ScriptPanel:
         grid(fill, sticky=nsew)
 
 
-sys.argv.append(r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid')
-f = App(sys.argv[1], {})
+path = r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid'
+# sys.argv.append(r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid')
+f = App(path, {})
 f.root.mainloop()
 
 # ROOT.mainloop()

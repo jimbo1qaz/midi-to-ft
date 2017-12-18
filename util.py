@@ -3,7 +3,9 @@ This file contains miscellaneous utilities. Anything working on a track is exclu
 """
 
 from fractions import Fraction as _Fraction
-from tkinter import Widget, ttk
+from tkinter import *
+from tkinter import ttk
+from types import FunctionType
 
 _TrackType = None
 
@@ -235,6 +237,8 @@ class AttrDict(dict):
         self.__dict__ = self
 
 
+
+
 # **** GUI ****
 
 MONO_FONT = '"DejaVu Sans Mono" 9'
@@ -260,3 +264,22 @@ def weigh(frame, xs=[1], ys=[1]):
 
 def y_weigh(frame: ttk.Frame, ys):
     weigh(frame, ys=ys, xs=[1])
+
+
+def recursive_bind(bound_widget: Widget, sequence: str, func: FunctionType):
+    """
+    Every event is captured, but only applied if the event's widget is within
+    the binding.
+    """
+
+    root = bound_widget._root()
+
+    def root_func(event: Event):
+        clicked = event.widget  # Clicked
+        while clicked:
+            if clicked == bound_widget:
+                return func(event)
+            clicked = clicked.master
+        return
+
+    root.bind(sequence, root_func)
