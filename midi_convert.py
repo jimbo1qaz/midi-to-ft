@@ -79,8 +79,6 @@ def convert_track(track):
             time = event[1]
             maxtick = max(maxtick, time)
 
-            # TODO: Why are some notes not being vol-changed? (eg rock organ)
-
             # Volume change
             if type == 0x07:
                 pass # PRINT('Vol-event Time:', time)
@@ -145,14 +143,3 @@ def convert_track(track):
             pitch_out[time] = pitch2cents(value, pitch_range)
 
     return note_out, pitch_out, vibrato_out, maxtick
-
-
-# def get_name(track):
-#     name = None
-#     for event in track:
-#         if event[0] == 'track_name':
-#             # event, time, text
-#             name = event[2]
-#             return name
-
-#     return None

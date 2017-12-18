@@ -87,3 +87,10 @@ def pitch_fmt(pitch):
         return '{} {}'.format(pitch, pitch2perc(pitch))
     else:
         return str(pitch)
+
+def note2sci(note):
+    note2letter = ['C', 'C#', 'D', 'D#', 'E', 'F',
+                   'F#', 'G', 'G#', 'A', 'A#', 'B']
+    octave = note // 12 - 1
+    letter = note2letter[note % 12]
+    return letter + str(octave)

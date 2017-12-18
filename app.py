@@ -1,18 +1,19 @@
+import sys
 from tkinter import *
+from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk
 
 from midi import MIDI
-import util
 import midiutil
 
 from piano import PianoPanel
-from util import zeros, nsew, grid, y_expand
+from util import zeros, nsew, grid, weigh, y_weigh
 
 ROOT = Tk()
 
 
-def get_root():
-    return ROOT
+# def get_root():
+#     return ROOT
 
 
 """
@@ -25,6 +26,7 @@ layout
 
 
 INITIAL_TNUM = 0
+
 
 class App:
     def __init__(self, filename, cfg: dict):
@@ -42,20 +44,19 @@ class App:
 
         self.root = root = ROOT
         root.title('midi2fami')
-        root.columnconfigure(0, weight=1)
-        root.rowconfigure(0, weight=1)
+        weigh(root)
 
         # root.
         self.layout = layout = ttk.Frame(root, padding=zeros)
         grid(layout, sticky=nsew)
-        y_expand(layout, [2, 1])
+        y_weigh(layout, [1, 0])
 
         # root.layout.
-        piano_frame = ttk.Frame(layout)  # , padding=zeros
+        piano_frame = ttk.Frame(layout)
         grid(piano_frame, 0, 0, sticky=nsew)
         self.piano = PianoPanel(piano_frame, self, INITIAL_TNUM, cfg)   # fixme
 
-        script_frame = ttk.Frame(layout)  # , padding=zeros
+        script_frame = ttk.Frame(layout)
         grid(script_frame, 0, 1, sticky=nsew)
         self.script = ScriptPanel(script_frame, cfg)
 
@@ -81,18 +82,24 @@ def track_names_uh(tracks):
 
     name_max = max(len(name) for name in track_names)
 
+    ret = []
     for i in range(len(tracks)):
-        yield(str(i).ljust(4) + '| ' + track_names[i].ljust(name_max + 4) + '| ' + track_instrs[i])
+        ret.append(str(i).ljust(4) + '| ' + track_names[i].ljust(name_max + 4) + '| ' + track_instrs[i])
+    return ret
 
 
 class ScriptPanel:
     def __init__(self, frame, cfg):
+        assert cfg or True
         self.frame = frame
+        weigh(frame)
 
-        fill = Text(frame, height=8)
+        fill = ScrolledText(frame, height=16)
         grid(fill, sticky=nsew)
 
-sys.argv.append(r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid')
 
+sys.argv.append(r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid')
 f = App(sys.argv[1], {})
 f.root.mainloop()
+
+# ROOT.mainloop()

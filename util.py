@@ -212,6 +212,9 @@ def remove_ext(path:str):
 def all_same(iterable):
     return iterable.count(iterable[0]) == len(iterable)
 
+def I(s, *args, **kwargs):
+    return [int(x, *args, **kwargs) for x in s.split()]
+
 
 from importlib import import_module as importf
 
@@ -234,7 +237,11 @@ class AttrDict(dict):
 
 # **** GUI ****
 
-FONT = '"DejaVu Sans Mono" 9'
+MONO_FONT = '"DejaVu Sans Mono" 9'
+# s = ttk.Style()
+# s.configure('TCombobox', font=MONO_FONT)
+
+FONT = '"Segoe UI" 9'
 zeros = (0, 0, 0, 0)
 nsew = 'nsew'
 
@@ -243,8 +250,13 @@ def grid(widget: Widget, x=0, y=0, **kwargs):
     widget.grid(column=x, row=y, **kwargs)
 
 
-def y_expand(frame: ttk.Frame, rows, **kw_rows):
-    for row, weight in enumerate(rows):
+def weigh(frame, xs=[1], ys=[1]):
+    for row, weight in enumerate(ys):
         frame.rowconfigure(row, weight=weight)
-    for row, weight in kw_rows.items():
-        frame.rowconfigure(row, weight=weight)
+
+    for column, weight in enumerate(xs):
+        frame.columnconfigure(column, weight=weight)
+
+
+def y_weigh(frame: ttk.Frame, ys):
+    weigh(frame, ys=ys, xs=[1])

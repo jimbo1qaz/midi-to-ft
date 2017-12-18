@@ -150,42 +150,13 @@ class Viewer(object):
         return pixel_range - scaled_cents
 
 
-    def draw_vline(self, x, **kwargs):
-        for canvas in self.xscrolls:
-            height_str = canvas.cget('height')
-            height = int(height_str)
-            canvas.create_line(x, 0, x, height, **kwargs)
 
-    @staticmethod
-    def draw_single_vline(canvas, x, **kwargs):
-        height_str = canvas.cget('height')
-        height = int(height_str)
-        canvas.create_line(x, 0, x, height, **kwargs)
-
-    def draw_hline(self, y, **kwargs):
-        for canvas in self.yscrolls:
-            # Drawing a horizontal line, you must calculate the width of the canvas.
-            width_str = canvas.cget('width')
-            width = int(width_str)
-            canvas.create_line(0, y, width, y, **kwargs)
-
-    @staticmethod
-    def draw_single_hline(canvas, y, **kwargs):
-        # Drawing a horizontal line, you must calculate the width of the canvas.
-        width_str = canvas.cget('width')
-        width = int(width_str)
-        canvas.create_line(0, y, width, y, **kwargs)
-
-
-    @staticmethod
-    def draw_text(canvas, x, y, text, **kwargs):
-        canvas.create_text(x, y, anchor='w', font=FONT, text=text, **kwargs)
 
     # UTILITY
     def create_canvas(self, width, height):
         canvas = Canvas(self.frame, bg='#FFF', scrollregion=(0, 0, width, height),
                         width=width, height=height, bd=0, highlightthickness=0, relief='ridge',
-                        takefocus=True)
+                        takefocus=True)     # FIXME clickable focus?
         return canvas
 
     # etc.
@@ -205,7 +176,6 @@ class Viewer(object):
         # # view(self.new_tracknum, scrolls)
 
     def _on_list_selected(self, event):
-        # Add 1 to the track, as the thing only shows tracks [1:]
         self.new_tracknum = self.track_box.current()
         self.regenerate()
 
