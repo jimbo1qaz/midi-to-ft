@@ -1,12 +1,13 @@
 from tkinter import *
 from tkinter import ttk
+from typing import List
 
 from midi import MIDI
 import midiutil
 
 from piano import PianoPanel
 from script2ft import ScriptPanel
-from util import weigh
+from util import weigh, TrackType
 
 ROOT = Tk()
 
@@ -28,17 +29,17 @@ INITIAL_TNUM = 0
 
 
 
-def wtf(frame):
-    def key(event):
-        print("pressed", repr(event.char))
-
-    def callback(event):
-        frame = event.widget
-        frame.focus_set()
-        print("clicked at", event.x, event.y)
-
-    frame.bind("<Key>", key)
-    frame.bind("<Button-1>", callback)
+# def wtf(frame):
+#     def key(event):
+#         print("pressed", repr(event.char))
+#
+#     def callback(event):
+#         frame = event.widget
+#         frame.focus_set()
+#         print("clicked at", event.x, event.y)
+#
+#     frame.bind("<Key>", key)
+#     frame.bind("<Button-1>", callback)
 
 
 
@@ -72,7 +73,7 @@ class App:
 
         script_frame = ttk.Frame(layout)
         layout.add(script_frame)
-        self.script = ScriptPanel(script_frame, cfg)
+        self.script = ScriptPanel(script_frame, self, cfg)
 
 
 def track_names_uh(tracks):

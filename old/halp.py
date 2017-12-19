@@ -1,22 +1,36 @@
+# import keyboard
+#
+# # keyboard.press_and_release('shift+s, space')
+# #
+# # keyboard.write('The quick brown fox jumps over the lazy dog.')
+# #
+# # # Press PAGE UP then PAGE DOWN to type "foobar".
+# # keyboard.add_hotkey('page up, page down', lambda: keyboard.write('foobar'))
+# #
+# # # Blocks until you press esc.
+# # keyboard.wait('esc')
+# #
+# # # Record events until 'esc' is pressed.
+# # recorded = keyboard.record(until='esc')
+# # # Then replay back at three times the speed.
+# # keyboard.play(recorded, speed_factor=3)
+#
+# # Type @@ then press space to replace with abbreviation.
+# keyboard.add_abbreviation('@@', 'my.long.email@example.com')
+# # Block forever.
+# keyboard.wait()
+
+
 from tkinter import *
 
-root = Tk()
+import keyboard
 
 
-def wtf(frame):
-    def key(event):
-        print("pressed", repr(event.char))
+def _send(event):
+    keyboard.release('ctrl')
+    keyboard.press_and_release('alt+tab')
 
-    def callback(event):
-        frame.focus_set()
-        print("clicked at", event.x, event.y)
+tk = Tk()
+tk.bind('<Control-Return>', _send)
 
-    frame.bind("<Key>", key)
-    frame.bind("<Button-1>", callback)
-
-
-frame = Frame(root, width=100, height=100)
-wtf(frame)
-frame.pack()
-
-root.mainloop()
+tk.mainloop()

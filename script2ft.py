@@ -1,12 +1,18 @@
+from fractions import Fraction
+from enum import Enum, auto
+import math
 from tkinter import *
 from tkinter import ttk
+import keyboard
+import time
 
-from util import weigh, grid, nsew
+from util import weigh, grid, nsew, time2ticks, idx_time, epsilon, TrackType,\
+    AttrDict, MONO_FONT
 
 
 class ScrolledText(Text):
     def __init__(self, master=None, **kw):
-        self.frame = Frame(master)
+        self.frame = ttk.Frame(master)
         self.vbar = ttk.Scrollbar(self.frame)
         self.vbar.pack(side=RIGHT, fill=Y)
 
@@ -29,11 +35,163 @@ class ScrolledText(Text):
         return str(self.frame)
 
 
+class Release(Enum):
+    release = auto
+    cut = auto
+
+
 class ScriptPanel:
-    def __init__(self, frame, cfg):
+    def __init__(self, frame, app, cfg):
         assert cfg or True
         self.frame = frame
-        weigh(frame)
+        self.app = app
+        weigh(frame, ys=[0,0,0,0,0,0,0,0,0,1])
+        frame.configure(padding=4)
 
-        fill = ScrolledText(frame, height=16)
-        grid(fill, sticky=nsew)
+        # **** Script configuration ****
+
+        ROW_BEAT = cfg.get('rows_beat', 4)
+        self.ft = Famitracker()
+
+        # **** GUI setup ****
+
+        self.text = text = ScrolledText(frame, height=16, font=MONO_FONT)
+        grid(text, sticky=nsew, rowspan=1000)
+
+        # self.row_qnote_label =
+        grid(Label(frame, text='Rows per beat:'), x=1, sticky=nsew)
+        self.row_beat = row_beat = ttk.Entry(frame, width=6)
+        row_beat.insert(0, str(ROW_BEAT))
+        grid(row_beat, x=2, sticky=nsew)
+
+        text.configure(maxundo=-1)
+        text.bind('<Control-Return>', self._send)
+
+
+
+    def _send(self, event: Event):
+        keyboard.release('ctrl+shift+alt')
+        keyboard.press_and_release('alt+tab')
+
+        line = self.text.get('insert linestart', 'insert lineend').strip()  # type: str
+        words = line.split()
+        it = iter(words)
+
+        # **** Parse text ****
+        # 't1 [0 3:2] [perc|release...]'
+
+        trackn = next(it).lstrip('track')
+        trackn = int(trackn)
+
+        begin = next(it).lstrip('[')
+        begin = time2ticks(begin, self.app.tick_rate)
+
+        end = next(it).rstrip(']')
+        end = time2ticks(end, self.app.tick_rate)
+
+        cfg = AttrDict({flag: True for flag in it})
+        cfg.rows_per_beat = int(self.row_beat.get())
+
+        # **** MIDI to rows ****
+
+        rows = self.rows_midi(trackn, begin, end, cfg)
+
+        self.ft.send(rows)
+
+        return 'break'
+
+    def rows_midi(self, trackn, begin_midi, end_midi, cfg):
+        def row_midi(midi_t, ceil=False):
+            rown = Fraction(midi_t - begin_midi) / self.app.tick_rate \
+                   * cfg['rows_per_beat']
+            if ceil:
+                return math.ceil(rown)
+            else:
+                return round(rown - epsilon)
+
+        nrows = row_midi(end_midi, ceil=False)
+
+        rows = [None] * nrows
+        release = cfg.get('release', None)  # type: str
+        if release:
+            release = Release[release]  # type: Enum
+
+        row_end = None
+
+        # def on_note(note):
+        #     nonlocal row_end
+
+        track = self.app.tracks[trackn]     # type: TrackType
+        i0 = idx_time(track, begin_midi)
+        i1 = idx_time(track, end_midi)
+        for ev in track[i0:i1]:
+            if ev[0] == 'note':
+                mtime = ev[1]
+                mdur = ev[2]
+                mpitch = ev[4]
+                # vel = ev[5]
+
+                row_time = row_midi(mtime)
+                if row_end is not None and row_end < row_time and not rows[row_end]:
+                    rows[row_end] = release
+                if release:
+                    row_end = row_midi(mtime + mdur)
+                    if row_end == row_time:
+                        row_end += 1
+
+                rows[row_time] = mpitch
+
+        if row_end is not None and row_end in range(len(rows)) and not rows[row_end]:
+            rows[row_end] = release
+
+        return rows
+
+
+OCTAVE = 12
+
+
+class Famitracker:
+    def __init__(self):
+        self.octave_up = 'f11'
+        self.octave_down = 'f10'
+        self.keyboards = ['zsxdcvgbhnjm', 'awsedftgyhuj']
+        self.releases = {
+            Release.release: '1',
+            Release.cut: '`',
+        }
+
+    def send(self, rows):
+        time.sleep(0.2)
+        keyboard.send('tab')
+        keyboard.send('shift+tab')
+
+        def octave_to(new):
+            nonlocal octave
+            while octave > new:
+                octave -= 1
+                keyboard.send(self.octave_down)
+            while octave < new:
+                octave += 1
+                keyboard.send(self.octave_up)
+
+        octave = octave0 = None
+        for row in rows:
+            time.sleep(0.02)
+            if isinstance(row, int):
+                note = row
+                if octave is None:
+                    octave = octave0 = note // OCTAVE
+
+                octave_to(note // OCTAVE)
+                keyboard.send(self.keyboards[0][note % OCTAVE])
+
+            elif isinstance(row, Release):
+                keyboard.send(self.releases[row])
+            else:
+                keyboard.send('down')
+
+        if octave0 is not None:
+            octave_to(octave0)
+
+        # for _ in rows:
+        #     keyboard.send('up')

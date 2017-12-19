@@ -3,7 +3,7 @@ from tkinter import ttk
 
 from midi_convert import convert_track
 from midiutil import note2sci
-from util import nsew, grid, FONT, I, recursive_bind
+from util import nsew, grid, FONT, I, recursive_bind, epsilon
 
 
 # class DebugScrollbar(ttk.Scrollbar):
@@ -101,11 +101,8 @@ class Scrollable:
         for scroll in self.xscrolls:
             scroll.xview_scroll(1, 'units')
 
-    #
-
     @staticmethod
     def _onclick(event: Event):
-        print(event)
         event.widget.focus_set()
 
     # *************************************
@@ -162,7 +159,7 @@ class PianoPanel(Scrollable):
     def calc_x(self, time):
         # Converts from time to width.
         # Ticks / (ticks/note) * (pixels/note) = pixels
-        return round(time * self.qnote_width / self.tickrate + 0.000001)
+        return round(time * self.qnote_width / self.tickrate + epsilon)
 
     def calc_y(self, note):
         return self.note_height * (self.MIDI_NOTES - note - 1)
@@ -184,6 +181,7 @@ class PianoPanel(Scrollable):
 
         Scrollable.__init__(self)
         self.frame = frame
+        frame.config(takefocus=True)
 
         self.track_box = None
 
@@ -191,7 +189,7 @@ class PianoPanel(Scrollable):
 
         # **** MIDI to GUI ****
 
-        self.note_height = cfg.get('note_height', 16)
+        self.note_height = cfg.get('note_height', 12)
         self.qnote_width = cfg.get('qnote_width', 48)
         self.pitch_range = cfg.get('pitch_range', 1200)
         self.vol_expr = cfg.get('vol_expr', lambda v: v)
@@ -288,8 +286,8 @@ class PianoPanel(Scrollable):
     # UTILITY
     def create_canvas(self, width, height):
         canvas = Canvas(self.frame, bg='#FFF', scrollregion=(0, 0, width, height),
-                        width=width, height=height, bd=0, highlightthickness=0, relief='ridge',
-                        takefocus=True)     # FIXME clickable focus?
+                        width=width, height=height, bd=0, highlightthickness=0, relief='ridge')
+                        # takefocus=True)
         self.canvases.append(canvas)
         return canvas
 
@@ -350,6 +348,7 @@ class PianoPanel(Scrollable):
 
         recursive_bind(root, '<Button-1>', self._onclick)
 
+    BLACK_KEYS = [1,3,6,8,10]
 
     def setup_background(self):
         canvas = self.canvas
@@ -358,14 +357,14 @@ class PianoPanel(Scrollable):
 
         # Draw note lines
         for note in range(128):
-            if note % 12 in [1,3,6,8,10]:
+            if note % 12 in self.BLACK_KEYS:
                 y = self.calc_y(note)
                 canvas.create_rectangle(0, y, width, y+self.note_height, width=0, fill=self.COLOR_PIANO_BLACK)
         for note in range(128):
             y = self.calc_y(note)
             self.draw_hline(y)
             if note % 12 == 0:
-                self.draw_hline(y + 15)
+                self.draw_hline(y + self.note_height - 1)
 
         # Draw note labels
         # (optional) percussion names?

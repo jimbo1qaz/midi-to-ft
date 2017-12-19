@@ -2,6 +2,7 @@ import inspect
 
 
 # event, ... , channel, params...
+from util import epsilon
 
 PITCH_EVENTS = ['note', 'key_after_touch']
 DEBUGON = ['convert_track']
@@ -13,7 +14,7 @@ def PRINT(*args, **kwargs):
 
 
 def vol_combine(a, b):
-    return round((a / 127) * (b / 127) * 127 + 0.000001)
+    return round((a / 127) * (b / 127) * 127 + epsilon)
 
 
 def remove_end_notes(currnotes, time):

@@ -1,17 +1,49 @@
 """
 This file contains miscellaneous utilities. Anything working on a track is excluded.
 """
-
+import bisect
 from fractions import Fraction as _Fraction
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk, font
 from types import FunctionType
+from typing import List
 
-_TrackType = None
+EventType = List
+TrackType = List[EventType]
 
+epsilon = 0.000001
 
 class MidiException(Exception):
     pass
+
+
+class IterGetter:
+    """
+    bisect does not provide "key" because repeatedly calling "key" is inefficient. like I care?
+
+    I'm calling this function once per list, tops. O(N) generation is SLOWER than O(log N) bisection!
+    """
+
+    def __init__(self, ls, keyf):
+        self.ls = ls
+        self.keyf = keyf
+
+    def __len__(self):
+        return len(self.ls)
+
+    def __getitem__(self, index):
+        return self.keyf(self.ls[index])
+
+
+def idx_time(ls: TrackType, time: int):
+    keyf = lambda ev: ev[1]
+
+    times = IterGetter(ls, keyf)
+
+    idx = bisect.bisect_left(times, time)
+    return idx
+
+
 
 
 def parse_frac(infrac):
@@ -25,8 +57,8 @@ def parse_frac(infrac):
     return _Fraction(infrac)
 
 
-def time2ticks(time: str, tickrate):
-    # Converts a string representation of time to ticks.
+def time2ticks(time: str, tickrate, keysig=4):
+    # Converts a string timestamp to ticks.
 
     # measures : beats : beat frac T ticks
 
@@ -52,7 +84,7 @@ def time2ticks(time: str, tickrate):
     if len(tsplit) > 1:
         ticks = int(tsplit[1])
 
-    out_beats = 4 * measures + beats + other_frac
+    out_beats = keysig * measures + beats + other_frac
     out_ticks = round(out_beats * tickrate) + ticks
 
     return out_ticks
@@ -244,6 +276,8 @@ class AttrDict(dict):
 MONO_FONT = '"DejaVu Sans Mono" 9'
 # s = ttk.Style()
 # s.configure('TCombobox', font=MONO_FONT)
+
+# MONO_FONT = font.Font(family="DejaVu Sans Mono", size=9)
 
 FONT = '"Segoe UI" 9'
 zeros = (0, 0, 0, 0)

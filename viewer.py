@@ -267,6 +267,7 @@ class Viewer(object):
         self.setup_measures()
         self.draw()
         if self.cfg['scrolls']:
+            assert False
             print(self.cfg['scrolls'])
             wtf = self.cfg['scrolls']
             for tup, scroll in zip(wtf[0], self.xscrolls):
