@@ -6,6 +6,7 @@ from tkinter import ttk
 import keyboard
 import time
 
+from midiutil import perc2pitch
 from util import weigh, grid, nsew, time2ticks, idx_time, epsilon, TrackType,\
     AttrDict, MONO_FONT
 
@@ -89,7 +90,33 @@ class ScriptPanel:
         end = next(it).rstrip(']')
         end = time2ticks(end, self.app.tick_rate)
 
-        cfg = AttrDict({flag: True for flag in it})
+        cfg = AttrDict()
+        for flag in it:
+
+            # perc=72 -> 0
+            # perc=72= -> 72
+            if flag.startswith('perc='):
+                things = flag.split('=')
+
+                if len(things) == 2:
+                    new_note = 0
+                elif things[2] == '':
+                    new_note = perc2pitch(things[1])
+                else:
+                    new_note = perc2pitch(things[2])
+                in_note = perc2pitch(things[1])
+
+                def mutate(ev, in_note=in_note, new_note=new_note):
+                    if ev[4] != in_note:
+                        return None
+                    ev = ev[:]
+                    ev[4] = new_note   # percussion note 0
+                    return ev
+
+                cfg.mutate = mutate
+            else:
+                cfg[flag] = True
+
         cfg.rows_per_beat = int(self.row_beat.get())
 
         # **** MIDI to rows ****
@@ -124,8 +151,13 @@ class ScriptPanel:
         track = self.app.tracks[trackn]     # type: TrackType
         i0 = idx_time(track, begin_midi)
         i1 = idx_time(track, end_midi)
+        mutate = cfg.get('mutate', lambda ev: ev)
         for ev in track[i0:i1]:
             if ev[0] == 'note':
+                ev = mutate(ev)
+                if not ev:
+                    continue
+
                 mtime = ev[1]
                 mdur = ev[2]
                 mpitch = ev[4]

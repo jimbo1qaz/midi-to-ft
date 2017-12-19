@@ -124,7 +124,7 @@ def keep_leading(in_str, index, character=None):
 
 
 
-def dict_find(value, dic):
+def dict_getkey(value, dic):
     value = value.replace('_', ' ').lower()
 
     # # Is it an instrument number?
@@ -163,7 +163,7 @@ def dict_find(value, dic):
     return inverse[vmatch[0]]
 
 
-def dict_loose(key, dic):
+def dict_get(key, dic):
     """
     @type key: int
     @type dic: dict

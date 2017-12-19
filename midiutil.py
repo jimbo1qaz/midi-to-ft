@@ -1,5 +1,5 @@
 from midi import MIDI as _MIDI
-from util import dict_find, dict_loose
+from util import dict_getkey, dict_get
 
 
 def event_is_vol(event):
@@ -55,11 +55,11 @@ def sort_track(track):
 
 
 def instr2num(inst_name):
-    return dict_find(inst_name, _MIDI.Number2patch)
+    return dict_getkey(inst_name, _MIDI.Number2patch)
 
 
 def num2instr(patch_num):
-    return dict_loose(patch_num, _MIDI.Number2patch)
+    return dict_get(patch_num, _MIDI.Number2patch)
 
 
 def instr_fmt(instr_num, is_perc):
@@ -75,11 +75,12 @@ def instr_fmt(instr_num, is_perc):
 
 
 def perc2pitch(perc_name):
-    return dict_find(perc_name, _MIDI.Notenum2percussion)
+    # TODO: fix naming
+    return dict_getkey(perc_name, _MIDI.Notenum2percussion)
 
 
 def pitch2perc(pitch):
-    return dict_loose(pitch, _MIDI.Notenum2percussion)
+    return dict_get(pitch, _MIDI.Notenum2percussion)
 
 
 def pitch_fmt(pitch):
