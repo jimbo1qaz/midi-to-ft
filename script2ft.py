@@ -1,5 +1,5 @@
 from fractions import Fraction
-from enum import Enum, auto
+from enum import Enum, auto, unique
 import math
 from tkinter import *
 from tkinter import ttk
@@ -36,9 +36,10 @@ class ScrolledText(Text):
         return str(self.frame)
 
 
+@unique
 class Release(Enum):
-    release = auto
-    cut = auto
+    release = auto()
+    cut = auto()
 
 
 class ScriptPanel:
@@ -114,8 +115,15 @@ class ScriptPanel:
                     return ev
 
                 cfg.mutate = mutate
-            else:
-                cfg[flag] = True
+                continue
+
+            try:
+                cfg.release = Release[flag]
+                continue
+            except KeyError:
+                pass
+
+            cfg[flag] = True
 
         cfg.rows_per_beat = int(self.row_beat.get())
 
@@ -139,9 +147,9 @@ class ScriptPanel:
         nrows = row_midi(end_midi, ceil=False)
 
         rows = [None] * nrows
-        release = cfg.get('release', None)  # type: str
-        if release:
-            release = Release[release]  # type: Enum
+        release = cfg.get('release', None)  # type: Release
+        # if release:
+        #     release = Release[release]  # type: Enum
 
         row_end = None
 
