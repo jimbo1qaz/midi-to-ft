@@ -1,0 +1,16 @@
+- Add theming support.
+
+- Save per MIDI:
+	- Text box.
+	- Remember view position?
+
+- Simplify text. Add examples.
+"""Examples:
+0:4
+0:4 [release, cut]
+4:8 perc=42
+Press Ctrl+Enter to execute."""
+
+- Open dialog.
+
+- Non-4/4 time.

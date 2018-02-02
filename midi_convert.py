@@ -127,13 +127,13 @@ def convert_track(track):
                     pitch_range_notes = event[4]
                     pitch_range = 100 * pitch_range_notes + pitch_range_cents
                     if time in pitch_raw:
-                        pitch_out[time] = pitch2cents(pitch_raw[time], pitch_range)
+                        pitch_out[time] = pitch2cents(pitch_raw[time], pitch_range) # FIXME delete line?
             elif type == 0x26:  # 0x26 LSB
                 if rpn_msb == 0x00:     # Curr RPN = Pitch bend
                     pitch_range_cents = event[4]
                     pitch_range = 100 * pitch_range_notes + pitch_range_cents
                     if time in pitch_raw:
-                        pitch_out[time] = pitch2cents(pitch_raw[time], pitch_range)
+                        pitch_out[time] = pitch2cents(pitch_raw[time], pitch_range) # FIXME delete line?
 
         elif event[0] == 'pitch_wheel_change':
             time = event[1]
