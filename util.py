@@ -279,7 +279,6 @@ MONO_FONT = '"DejaVu Sans Mono" 9'
 
 # MONO_FONT = font.Font(family="DejaVu Sans Mono", size=9)
 
-FONT = '"Segoe UI" 9'
 zeros = (0, 0, 0, 0)
 nsew = 'nsew'
 

@@ -138,7 +138,7 @@ class Viewer(object):
     def calc_x(self, time):
         # Converts from time to width.
         # Ticks / (ticks/note) * (pixels/note) = pixels
-        return round(time * self.qnote_width / self.tickrate + 0.000001)
+        return round(time * self.qnote_width / self.tickrate + epsilon)
 
     def pitch_calc_y(self, cents):
         pitch_height = int(self.pitch_canvas.cget('height'))
@@ -267,7 +267,6 @@ class Viewer(object):
         self.setup_measures()
         self.draw()
         if self.cfg['scrolls']:
-            assert False
             print(self.cfg['scrolls'])
             wtf = self.cfg['scrolls']
             for tup, scroll in zip(wtf[0], self.xscrolls):

@@ -27,22 +27,6 @@ layout
 
 INITIAL_TNUM = 0
 
-
-
-# def wtf(frame):
-#     def key(event):
-#         print("pressed", repr(event.char))
-#
-#     def callback(event):
-#         frame = event.widget
-#         frame.focus_set()
-#         print("clicked at", event.x, event.y)
-#
-#     frame.bind("<Key>", key)
-#     frame.bind("<Button-1>", callback)
-
-
-
 class App:
     def __init__(self, filename, cfg: dict):
         self.cfg = cfg
@@ -69,7 +53,7 @@ class App:
         # root.layout.
         piano_frame = ttk.Frame(layout, width=640, height=480)
         layout.add(piano_frame, weight=1)
-        self.piano = PianoPanel(piano_frame, self, INITIAL_TNUM, cfg)   # fixme
+        self.piano = PianoPanel(piano_frame, self, INITIAL_TNUM, cfg)
 
         script_frame = ttk.Frame(layout)
         layout.add(script_frame)
@@ -103,9 +87,16 @@ def track_names_uh(tracks):
     return ret
 
 
-path = r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid'
-# sys.argv.append(r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid')
-f = App(path, {})
-f.root.mainloop()
+# DEFAULT = r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid'
+def main(path=None, cfg=None):
+    try:
+        path = path or sys.argv[1] #or DEFAULT
+    except Exception:
+        path = DEFAULT
+    # sys.argv.append(r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid')
+    f = App(path, cfg or {})
+    f.root.mainloop()
 
-# ROOT.mainloop()
+    # ROOT.mainloop()
+if __name__ == '__main__':
+    main()

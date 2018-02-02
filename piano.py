@@ -3,13 +3,14 @@ from tkinter import ttk
 
 from midi_convert import convert_track
 from midiutil import note2sci
-from util import nsew, grid, FONT, I, recursive_bind, epsilon
+from util import nsew, grid, I, recursive_bind, epsilon
 
 
 # class DebugScrollbar(ttk.Scrollbar):
 #     def set(self, *args):
 #         print("SCROLLBAR SET", args)
 #         Scrollbar.set(self, *args)
+
 
 
 class Scrollable:
@@ -139,9 +140,8 @@ class Scrollable:
 
     #
 
-    @staticmethod
-    def draw_text(canvas, x, y, text, **kwargs):
-        canvas.create_text(x, y, anchor='w', font=FONT, text=text, **kwargs)
+    def draw_text(self, canvas, x, y, text, **kwargs):
+        canvas.create_text(x, y, anchor='w', font=self.font, text=text, **kwargs)
 
 
 # _NOTE_HEIGHT = self.note_height
@@ -193,6 +193,9 @@ class PianoPanel(Scrollable):
         self.qnote_width = cfg.get('qnote_width', 48)
         self.pitch_range = cfg.get('pitch_range', 1200)
         self.vol_expr = cfg.get('vol_expr', lambda v: v)
+
+        self.font = font.Font(family="Segoe UI", size=9)
+        self.update_font()
 
         self.tickrate = app.tick_rate
 
@@ -247,6 +250,11 @@ class PianoPanel(Scrollable):
 
         self.load_track(initial_tnum)
 
+    def update_font(self):
+        self.font_size = round(self.note_height * 12/16 + epsilon)
+        self.font.configure(size=self.font_size)
+
+        self.dy = round(self.note_height * 0.5)
 
     def load_track(self, track_num):
         """ Load track, (re)initialize canvases. """
@@ -355,6 +363,8 @@ class PianoPanel(Scrollable):
         pitch_canvas = self.pitch_canvas
         width = self.width
 
+        self.update_font()
+
         # Draw note lines
         for note in range(128):
             if note % 12 in self.BLACK_KEYS:
@@ -368,10 +378,12 @@ class PianoPanel(Scrollable):
 
         # Draw note labels
         # (optional) percussion names?
+
+        dy = self.dy
         for y in range(128):
-            self.labels.create_text(29, self.calc_y(y) + 8, anchor='e', font=FONT,
+            self.labels.create_text(29, self.calc_y(y) + dy, anchor='e', font=self.font,
                                     text=str(y))
-            self.labels.create_text(62, self.calc_y(y) + 8, anchor='e', font=FONT,
+            self.labels.create_text(62, self.calc_y(y) + dy, anchor='e', font=self.font,
                                     text=note2sci(y))
 
         # TODO one object per canvas
@@ -405,7 +417,7 @@ class PianoPanel(Scrollable):
             # Convert the measure tick into pixels, then draw the line.
             measure_num = measure_tick // (4 * tickrate)
             measure_x = self.calc_x(measure_tick)
-            measure_x -= 1  # Create a double-thickness line. Not for the first, though.
+            measure_x += 1  # Create a double-thickness line. Not for the first, though.
             # Doesn't really matter, but inconsistent.
             self.draw_text(self.time_canvas, measure_x + 4, 8, str(measure_num))
             self.draw_vline(measure_x)
@@ -438,7 +450,10 @@ class PianoPanel(Scrollable):
                 note_pitch = note_tuple[0]
                 # volume = round((note_tuple[1] / 79) ** 2 * 99)
                 # volume = note_tuple[1] * 2
-                volume = self.vol_expr(note_tuple[1])
+                volume = note_tuple[1]
+                volume = self.vol_expr(abs(volume))
+                if volume != 0:
+                    volume *= round(volume / abs(volume))
 
                 end_time = note_tuple[2]
                 if pitch != note_pitch:
@@ -459,12 +474,15 @@ class PianoPanel(Scrollable):
 
                 volume = abs(volume)
 
-                amount_filled = volume / self.MIDI_VOLUME * self.note_height
+                amount_filled = round(volume / self.MIDI_VOLUME * self.note_height)
 
+                # Background
                 canvas.create_rectangle(note_x, note_y,
                                         note_end, note_y + self.note_height, fill=self.COLOR_GRAY)
-                canvas.create_rectangle(note_x, note_y + self.note_height - amount_filled,
-                                        note_end, note_y + self.note_height, fill=fill)
+                # Velocity fill
+                canvas.create_rectangle(note_x + 1, note_y + 1 + self.note_height - amount_filled,  # todo cleanup
+                                        note_end, note_y + self.note_height, fill=fill,
+                                        width=0)
                 self.draw_text(canvas, note_x + 2, note_y - 4, str(abs(volume)))
                 # DEBUGGING
                 # self.draw_text(canvas, note_x + 32, note_y + 8, str(time))
