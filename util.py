@@ -201,50 +201,10 @@ def volume_calc(a, b):
     return new_volume
 
 
-# def grouper(iterable, n):
-#     """Collect data into fixed-length chunks or blocks"""
-#     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
-#     length = len(iterable)
-#     if length % n != 0:
-#         raise MidiException('Grouper error ({} not a multiple of {})!'.format(
-#             length, n))
-#     args = [iter(iterable)] * n
-#     return zip(*args)
-
-
-# Too lazy to list-comprehension.
-# Because [True, True] & [True, False] ==> [True, False] is not valid syntax.
-# And importing numpy for a MIDI processing library would be ridiculous.
-def andf(l1, l2):
-    return [a & b for a, b in zip(l1, l2)]
-
-def lminus(l, m):
-    m = set(m)
-    return [x for x in l if x not in m]
-
-
-def num_ints(split):
-    for i, sub in enumerate(split):
-        if not sub.isnumeric():
-            return i
-
-    # ****: default return convention?
-    # I think this was meant for variadic @msh where you pass in multiple ints AND an expression.
-
-    return len(split)
-    # return None
-
-
-def copy2d(a):
-    return [l[:] for l in a]
-
 
 def remove_ext(path:str):
     return path[:path.rfind('.')]
 
-
-def all_same(iterable):
-    return iterable.count(iterable[0]) == len(iterable)
 
 def I(s, *args, **kwargs):
     return [int(x, *args, **kwargs) for x in s.split()]
@@ -267,8 +227,6 @@ class AttrDict(dict):
             seq = {}
         super(self.__class__, self).__init__(seq, **kwargs)
         self.__dict__ = self
-
-
 
 
 # **** GUI ****
@@ -299,7 +257,7 @@ def y_weigh(frame: ttk.Frame, ys):
     weigh(frame, ys=ys, xs=[1])
 
 
-def recursive_bind(bound_widget: Widget, sequence: str, func: FunctionType):
+def recursive_bind(bound_widget: Widget, sequence: str, func):
     """
     Every event is captured, but only applied if the event's widget is within
     the binding.
