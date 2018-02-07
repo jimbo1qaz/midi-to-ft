@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from typing import List
 
 from midi import MIDI
@@ -90,10 +90,10 @@ def track_names_uh(tracks):
 # DEFAULT = r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid'
 def main(path=None, cfg=None):
     try:
-        path = path or sys.argv[1] #or DEFAULT
+        path = path or sys.argv[1]
     except Exception:
-        path = DEFAULT
-    # sys.argv.append(r'C:\Users\jimbo1qaz\Dropbox\encrypted\projects\eirin\th08_14-modified.mid')
+        path = filedialog.askopenfilename(filetypes=[('MIDI file','*.mid')])
+
     f = App(path, cfg or {})
     f.root.mainloop()
 
